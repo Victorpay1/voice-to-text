@@ -60,13 +60,26 @@ else
     echo -e "${GREEN}✓ Homebrew found${NC}"
 fi
 
-# Install Python 3.12
-echo -e "${BLUE}[3/7]${NC} Installing Python 3.12..."
+# Install Python 3.12 and Java
+echo -e "${BLUE}[3/7]${NC} Installing Python 3.12 and Java..."
 if ! brew list python@3.12 &> /dev/null; then
     brew install python@3.12
     echo -e "${GREEN}✓ Python 3.12 installed${NC}"
 else
     echo -e "${GREEN}✓ Python 3.12 already installed${NC}"
+fi
+
+# Install Java (needed for grammar correction)
+if ! brew list openjdk &> /dev/null; then
+    echo "  Installing Java for grammar correction..."
+    brew install openjdk
+    # Add Java to PATH
+    if ! grep -q "/opt/homebrew/opt/openjdk/bin" ~/.zshrc 2>/dev/null; then
+        echo 'export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"' >> ~/.zshrc
+    fi
+    echo -e "${GREEN}✓ Java installed${NC}"
+else
+    echo -e "${GREEN}✓ Java already installed${NC}"
 fi
 
 # Create installation directory
@@ -159,13 +172,16 @@ echo "  5. Press Control + Space again to stop"
 echo "  6. Your text appears where your cursor is!"
 echo ""
 echo "FEATURES:"
-echo "  ✓ Ultra-fast AI transcription"
-echo "  ✓ Smart voice detection"
-echo "  ✓ English ↔ Spanish translation"
-echo "  ✓ Multiple accuracy modes"
+echo "  ✓ Ultra-fast AI transcription (2-4 seconds)"
+echo "  ✓ Smart voice detection with noise removal"
+echo "  ✓ Bilingual support: English ↔ Spanish"
+echo "  ✓ Optimized for Latin American Spanish"
+echo "  ✓ Grammar correction for both languages"
+echo "  ✓ Multiple accuracy modes (Fast/Clarity/Max)"
 echo "  ✓ Works offline after first use"
 echo ""
-echo -e "${YELLOW}Note: First launch may take 1-2 minutes to download AI models.${NC}"
+echo -e "${YELLOW}Note: First launch will download AI models and LanguageTool (~250MB).${NC}"
+echo -e "${YELLOW}      This takes 2-3 minutes and only happens once.${NC}"
 echo ""
 echo "Try it now by double-clicking the Desktop icon!"
 echo ""

@@ -15,13 +15,14 @@ Thank you for your purchase! You're about to get access to the fastest, easiest 
 Copy this entire command and paste it into Terminal, then press Enter:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Victorpay1/voice-to-text/main/install.sh)"
+curl -sL https://raw.githubusercontent.com/Victorpay1/voice-to-text/main/install.sh | bash
 ```
 
 **That's it!** The installer will:
-- ✅ Check and install required software
-- ✅ Download Voice to Text
-- ✅ Set up everything automatically
+- ✅ Check and install required software (Python, Java)
+- ✅ Download Voice to Text from GitHub
+- ✅ Set up bilingual support (English ↔ Spanish)
+- ✅ Configure grammar correction for both languages
 - ✅ Create a Desktop launcher icon
 
 **Time:** Takes about 5 minutes (mostly downloads)
@@ -66,10 +67,13 @@ Click the 🎤 icon to access:
 - Use the **Clarity Boost** mode for unclear speech
 - Switch to **Max Accuracy** for technical content
 
-### Multilingual Use
-- Speak in Spanish, type in English (or vice versa!)
-- Perfect for bilingual conversations
-- Great for language learning
+### Multilingual Use (English ↔ Spanish)
+- **Spanish → Spanish**: Optimized for Latin American accents
+- **English → English**: Enhanced for technical content
+- **Spanish → English**: Automatic translation
+- **English → Spanish**: Perfect for language learning
+- Grammar correction works in both languages
+- Removes filler words: "um/uh" (English), "eh/este/pues" (Spanish)
 
 ### Keyboard Shortcuts
 - `Control + Space` - Start/Stop recording

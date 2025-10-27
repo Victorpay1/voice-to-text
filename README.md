@@ -4,6 +4,25 @@
 
 Stop typing. Start talking. Voice to Text uses cutting-edge AI to convert your speech into text instantly — right where you need it.
 
+## 🚀 Quick Installation (5 minutes)
+
+**One-command install:** Copy and paste this into Terminal:
+
+```bash
+curl -sL https://raw.githubusercontent.com/Victorpay1/voice-to-text/main/install.sh | bash
+```
+
+That's it! The installer will:
+- ✅ Install all dependencies automatically
+- ✅ Download AI models
+- ✅ Create a launcher icon on your Desktop
+- ✅ Set up Java for grammar correction
+- ✅ Configure bilingual support (English ↔ Spanish)
+
+**After installation:** Double-click "Voice to Text.command" on your Desktop to launch!
+
+---
+
 ## ✨ What Makes It Special
 
 ### Lightning Fast ⚡
