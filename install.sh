@@ -26,12 +26,21 @@ echo "This will install Voice to Text on your Mac."
 echo "Installation takes ~5 minutes and requires ~500MB disk space."
 echo ""
 
-# Ask for confirmation
-read -p "Continue with installation? (y/n) " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Installation cancelled."
-    exit 0
+# Check if running in pipe mode (stdin is not a terminal)
+if [ -t 0 ]; then
+    # Interactive mode - ask for confirmation
+    read -p "Continue with installation? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installation cancelled."
+        exit 0
+    fi
+else
+    # Pipe mode - auto-continue (user ran: curl ... | bash)
+    echo "Starting installation automatically..."
+    echo "(Run script directly for interactive mode)"
+    echo ""
+    sleep 2
 fi
 
 echo ""
