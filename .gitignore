@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Project specific
+PROJECT_PROGRESS.md
+DISTRIBUTION_PLAN.md
+HOW_WE_BUILT_THIS.md
+BILINGUAL_SETUP.md
+Launch Enhanced Voice to Text.command
+install_translation_packages.py
+requirements_enhanced.txt
+
+# Runtime
+*.pid
+.voice_to_text.pid
+.voice_to_text_config.json
