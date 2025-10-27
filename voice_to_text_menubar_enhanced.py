@@ -775,11 +775,12 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
             try:
                 import language_tool_python
                 # Initialize English grammar checker
-                self.grammar_tool_en = language_tool_python.LanguageTool('en-US')
+                # Pin to version 6.6 (latest stable) to use cached files and avoid re-downloading
+                self.grammar_tool_en = language_tool_python.LanguageTool('en-US', language_tool_download_version='6.6')
                 print("✅ English grammar checker ready!")
                 # Initialize Spanish grammar checker
                 try:
-                    self.grammar_tool_es = language_tool_python.LanguageTool('es')
+                    self.grammar_tool_es = language_tool_python.LanguageTool('es', language_tool_download_version='6.6')
                     print("✅ Spanish grammar checker ready!")
                 except Exception as e:
                     print(f"⚠️  Spanish grammar checker unavailable: {e}")
@@ -1103,13 +1104,14 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
             # Filter → Noise Reduction → Normalize → Compress → Trim
             # Each step works on cleaner input from previous step
 
-            # 1. Apply band-pass filter FIRST to focus on speech frequencies (300 Hz - 8 kHz)
+            # 1. Apply band-pass filter FIRST to focus on speech frequencies (300 Hz - 7.8 kHz)
             # Research shows speech intelligibility is primarily in 300Hz-8kHz range
+            # Using 7800 Hz instead of 8000 Hz to avoid filter edge case (must be < fs/2)
             sos_high = signal.butter(4, 300, 'hp', fs=self.sample_rate, output='sos')
             audio_array = signal.sosfilt(sos_high, audio_array)
 
             # Low-pass filter to remove ultrasonic noise and artifacts
-            sos_low = signal.butter(4, 8000, 'lp', fs=self.sample_rate, output='sos')
+            sos_low = signal.butter(4, 7800, 'lp', fs=self.sample_rate, output='sos')
             audio_array = signal.sosfilt(sos_low, audio_array)
 
             # 2. Advanced noise reduction on filtered spectrum (mode-specific)
