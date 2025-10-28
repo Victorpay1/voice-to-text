@@ -166,6 +166,7 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
         self.recording_start_time = None
         self.processing = False  # Flag to prevent starting new recording while processing
         self.typing = False  # Flag to prevent keyboard listener interference while auto-typing
+        self.downloading_model = False  # Flag to indicate first-time model download (watchdog should ignore)
 
         # Translation support
         self.translation_available = False
@@ -255,8 +256,8 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
             try:
                 time.sleep(check_interval)
 
-                # Check if processing is stuck
-                if self.processing:
+                # Check if processing is stuck (but NOT if downloading model for first time)
+                if self.processing and not self.downloading_model:
                     if processing_start_time is None:
                         processing_start_time = time.time()
                         force_button_shown = False
@@ -276,6 +277,10 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
                             self.force_recovery()
                             processing_start_time = None
                             force_button_shown = False
+                elif self.downloading_model:
+                    # Downloading model - reset timer and hide force button
+                    processing_start_time = None
+                    force_button_shown = False
                 else:
                     # Not processing - reset and hide force button
                     if processing_start_time is not None or force_button_shown:
@@ -399,7 +404,14 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
                 return True
 
             print(f"\n📦 Loading {model_needed.upper()} model (first use of {mode} mode)...")
-            self.status_item.title = f"Status: Loading {model_needed} model..."
+            print(f"⏳ First time: Downloading AI model (~484MB)")
+            print(f"⏳ This takes 2-3 minutes - please be patient")
+            print(f"⏳ After this, transcription will be instant (2-4s)")
+            print(f"⏳ Do NOT use Force Stop - let the download complete!")
+            self.status_item.title = f"Status: Downloading {model_needed} model..."
+
+            # Set downloading flag to prevent watchdog from interrupting
+            self.downloading_model = True
 
             if model_needed == 'small':
                 self.whisper_model_small = WhisperModel(
@@ -431,6 +443,9 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
                 # Warm up the model to eliminate cold-start penalty
                 self.warmup_model(self.whisper_model_medium)
 
+            # Clear downloading flag - model is now loaded
+            self.downloading_model = False
+
             # Update last model used
             self.last_model_used = model_needed
 
@@ -444,6 +459,8 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
             print(f"❌ Error loading {model_needed} model: {e}")
             import traceback
             traceback.print_exc()
+            # Make sure to clear downloading flag on error
+            self.downloading_model = False
             return False
 
     def get_model_memory_mb(self, model_name):
