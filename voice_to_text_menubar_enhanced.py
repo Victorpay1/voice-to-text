@@ -342,6 +342,52 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
             except Exception as e:
                 print(f"⚠️  Memory monitor error: {e}")
 
+    def warmup_model(self, model):
+        """Warm up model with synthetic audio to eliminate cold-start penalty"""
+        try:
+            print("   🔥 Warming up model (eliminating cold-start)...")
+
+            # Create 3 seconds of minimal audio (near-silence with tiny variations)
+            # This is enough to initialize all internal caches
+            warmup_duration = 3  # seconds
+            warmup_samples = self.sample_rate * warmup_duration
+
+            # Generate minimal audio (very quiet tone to simulate speech)
+            # Using a simple sine wave at speech frequency (200 Hz)
+            t = np.linspace(0, warmup_duration, warmup_samples)
+            warmup_audio = 0.01 * np.sin(2 * np.pi * 200 * t)  # Very quiet 200 Hz tone
+
+            # Save to temporary WAV file
+            warmup_file = tempfile.NamedTemporaryFile(delete=False, suffix='_warmup.wav')
+            warmup_path = warmup_file.name
+
+            with wave.open(warmup_path, 'wb') as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(self.sample_rate)
+                audio_bytes = (warmup_audio * 32767).astype(np.int16).tobytes()
+                wf.writeframes(audio_bytes)
+
+            # Run a quick transcription to warm up all caches
+            # Use minimal settings for speed
+            _ = model.transcribe(
+                warmup_path,
+                language='en',
+                beam_size=1,  # Fastest
+                temperature=0.0,
+                vad_filter=False
+            )
+
+            # Clean up warmup file
+            os.unlink(warmup_path)
+
+            print("   ✅ Model warmed up! First recording will be fast.")
+
+        except Exception as e:
+            print(f"   ⚠️  Warmup failed (non-critical): {e}")
+            # Non-critical - continue without warmup
+            pass
+
     def load_model_for_mode(self, mode):
         """Lazy load the model needed for the specified mode"""
         try:
@@ -367,6 +413,9 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
                 print(f"✅ SMALL model loaded ({self.get_model_memory_mb('small'):.0f}MB)")
                 print(f"   Using {os.cpu_count()} CPU threads")
 
+                # Warm up the model to eliminate cold-start penalty
+                self.warmup_model(self.whisper_model_small)
+
             else:  # medium
                 self.whisper_model_medium = WhisperModel(
                     "medium",
@@ -378,6 +427,9 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
                 self.models_loaded['medium'] = True
                 print(f"✅ MEDIUM model loaded ({self.get_model_memory_mb('medium'):.0f}MB)")
                 print(f"   Using {os.cpu_count()} CPU threads")
+
+                # Warm up the model to eliminate cold-start penalty
+                self.warmup_model(self.whisper_model_medium)
 
             # Update last model used
             self.last_model_used = model_needed
@@ -1305,8 +1357,46 @@ class VoiceToTextMenuBarEnhanced(rumps.App):
                 no_speech_threshold=no_speech_thresh  # Language-adaptive threshold
             )
 
-            # Collect all segments
-            transcribed_text = " ".join([segment.text for segment in segments]).strip()
+            # Collect all segments with confidence filtering
+            # Filter out low-confidence segments to reduce hallucinations
+            all_segments = list(segments)
+
+            # Determine confidence threshold based on accuracy mode
+            if self.accuracy_mode == 'max':
+                confidence_threshold = -0.8  # Stricter for max accuracy
+            else:
+                confidence_threshold = -1.0  # Standard threshold
+
+            high_confidence_segments = []
+            filtered_count = 0
+
+            for segment in all_segments:
+                # Check avg_logprob (average log probability) for confidence
+                # Higher values (closer to 0) = more confident
+                # Typical range: -2.0 (low) to -0.3 (high)
+                if hasattr(segment, 'avg_logprob') and segment.avg_logprob < confidence_threshold:
+                    # Low confidence - filter out
+                    filtered_count += 1
+                    if segment.avg_logprob < -1.5:
+                        # Very low confidence - likely hallucination
+                        print(f"   🔍 Filtered LOW confidence segment: '{segment.text.strip()}' (score: {segment.avg_logprob:.2f})")
+                    else:
+                        print(f"   🔍 Filtered segment: '{segment.text.strip()}' (score: {segment.avg_logprob:.2f})")
+                else:
+                    # High confidence - keep it
+                    high_confidence_segments.append(segment)
+
+            # Log filtering results
+            total_segments = len(all_segments)
+            kept_segments = len(high_confidence_segments)
+
+            if filtered_count > 0:
+                print(f"🔍 Confidence filtering: {total_segments} segments, {kept_segments} kept, {filtered_count} filtered")
+            else:
+                print(f"🔍 Confidence filtering: {total_segments} segments, all high quality!")
+
+            # Combine only high-confidence segments
+            transcribed_text = " ".join([segment.text for segment in high_confidence_segments]).strip()
             print(f"📝 Transcribed ({self.input_language}): {transcribed_text}")
 
             # CRITICAL FIX: GC immediately after transcribe (official fix from PR #448)
